@@ -55,7 +55,7 @@ const results = document.getElementById("results");
 search.addEventListener("click", async () => {
   const url = `https://wp2n28.api.infobip.com/sms/1/logs?to=${phone_number.value}&content-type=application/json`;
   const headers = {
-    Authorization: secrets.infobip 
+    Authorization: `${secrets.infobip}`
   };
 
   try {
