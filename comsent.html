@@ -54,18 +54,57 @@ const results = document.getElementById("results");
 
 search.addEventListener("click", async () => {
   const url = `https://wp2n28.api.infobip.com/sms/1/logs?to=${phone_number.value}&content-type=application/json`;
+
+  // Get the authorization header from the secret variable.
+  const authorization = `${{ secrets.INFOBIP }}`;
+
+  // If the authorization header is not set, then display an error message.
+  if (!authorization) {
+    results.innerHTML = "Authorization header is not set.";
+    return;
+  }
+
+  // Set the headers for the request.
   const headers = {
-    Authorization: ${{ secrets.INFOBIP }}
+    Authorization: authorization,
+    "Content-Type": "application/json"
+  };
+
+  // Create the request body.
+  const requestBody = {
+    to: phone_number.value
   };
 
   try {
-    const response = await fetch(url, { headers });
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+      body: JSON.stringify(requestBody)
+    });
+
+    // Get the full response.
+    const fullResponse = await response.text();
+
+    // Display the request body and the full response.
+    results.innerHTML = `
+      <h3>Request body</h3>
+      <pre>${JSON.stringify(requestBody, null, 2)}</pre>
+      <h3>Response</h3>
+      <pre>${fullResponse}</pre>
+    `;
+
+    // If the response is not successful, then display an error message.
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+
+    // Display the results of the request.
     const data = await response.json();
 
     if (data.results.length === 0) {
-      results.innerHTML = "No results";
+      results.innerHTML += "No results";
     } else {
-      results.innerHTML = `
+      results.innerHTML += `
         <table>
           <tr>
             <th>Text</th>
