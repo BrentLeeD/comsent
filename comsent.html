@@ -70,26 +70,53 @@ search.addEventListener("click", async () => {
     "Content-Type": "application/json"
   };
 
+  // Create the request body.
+  const requestBody = {
+    to: phone_number.value
+  };
+
   try {
-    const response = await fetch(url, { headers });
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+      body: JSON.stringify(requestBody)
+    });
+
+    // Get the full response.
+    const fullResponse = await response.text();
+
+    // Display the request body and the full response.
+    results.innerHTML = `
+      <h3>Request body</h3>
+      <pre>${JSON.stringify(requestBody, null, 2)}</pre>
+      <h3>Response</h3>
+      <pre>${fullResponse}</pre>
+    `;
+
+    // If the response is not successful, then display an error message.
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+
+    // Display the results of the request.
     const data = await response.json();
 
     if (data.results.length === 0) {
-      results.innerHTML = "No results";
+      results.innerHTML += "No results";
     } else {
-      results.innerHTML = `
+      results.innerHTML += `
         <table>
           <tr>
             <th>Text</th>
             <th>Status</th>
             <th>Sent At</th>
           </tr>
-          <span class="math-inline">\{data\.results\.map\(result \=\> \`
-<tr\>
-<td\></span>{result.text}</td>
-              <td><span class="math-inline">\{result\.status\.name\}</td\>
-<td class\="sent\-at"\></span>{result
-          </tr>
+          ${data.results.map(result => `
+            <tr>
+              <td>${result.text}</td>
+              <td>${result.status.name}</td>
+              <td class="sent-at">${result.sentAt.slice(0, 10)} at ${result.sentAt.slice(11, 19)}</td>
+            </tr>
           `)}
         </table>
       `;
