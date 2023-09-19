@@ -54,8 +54,20 @@ const results = document.getElementById("results");
 
 search.addEventListener("click", async () => {
   const url = `https://wp2n28.api.infobip.com/sms/1/logs?to=${phone_number.value}&content-type=application/json`;
+
+  // Get the authorization header from the secret variable.
+  const authorization = ${{ secrets.INFOBIP }};
+
+  // If the authorization header is not set, then display an error message.
+  if (!authorization) {
+    results.innerHTML = "Authorization header is not set.";
+    return;
+  }
+
+  // Set the headers for the request.
   const headers = {
-    Authorization: ${{ secrets.INFOBIP }}
+    Authorization: authorization,
+    "Content-Type": "application/json"
   };
 
   try {
@@ -72,12 +84,12 @@ search.addEventListener("click", async () => {
             <th>Status</th>
             <th>Sent At</th>
           </tr>
-          ${data.results.map(result => `
-            <tr>
-              <td>${result.text}</td>
-              <td>${result.status.name}</td>
-              <td class="sent-at">${result.sentAt.slice(0, 10)} at ${result.sentAt.slice(11, 19)}</td>
-            </tr>
+          <span class="math-inline">\{data\.results\.map\(result \=\> \`
+<tr\>
+<td\></span>{result.text}</td>
+              <td><span class="math-inline">\{result\.status\.name\}</td\>
+<td class\="sent\-at"\></span>{result
+          </tr>
           `)}
         </table>
       `;
