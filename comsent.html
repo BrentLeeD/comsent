@@ -56,7 +56,7 @@ search.addEventListener("click", async () => {
   const url = `https://wp2n28.api.infobip.com/sms/1/logs?to=${phone_number.value}&content-type=application/json`;
 
   // Get the authorization header from the secret variable.
-  const authorization = ${{ secrets.INFOBIP }};
+  const authorization = `${{ secrets.INFOBIP }}`;
 
   // If the authorization header is not set, then display an error message.
   if (!authorization) {
