@@ -70,6 +70,53 @@ function sendMessage() {
 }
 
 // Display message in chat
+function handleSwipe(messageElement, message) {
+    if (checkSwipeDirection() === 'right') {
+        const saveDialog = document.createElement('div');
+        saveDialog.classList.add('save-dialog');
+        saveDialog.innerHTML = `
+            <p>Do you want to save this message?</p>
+            <input type="text" id="save-name" placeholder="Enter a name for this message">
+            <button id="save-yes">Yes</button>
+            <button id="save-no">No</button>
+        `;
+        messageElement.appendChild(saveDialog);
+
+        document.getElementById('save-yes').addEventListener('click', () => saveMessage(message));
+        document.getElementById('save-no').addEventListener('click', () => saveDialog.remove());
+    }
+}
+function saveMessage(message) {
+    const saveName = document.getElementById('save-name').value.trim();
+    if (saveName) {
+        const savedMessages = JSON.parse(localStorage.getItem('savedMessages') || '{}');
+        savedMessages[saveName] = message;
+        localStorage.setItem('savedMessages', JSON.stringify(savedMessages));
+        alert(`Message saved as "${saveName}"`);
+    } else {
+        alert('Please enter a name for the message');
+    }
+    document.querySelector('.save-dialog').remove();
+}
+// Auto-resize textarea
+function autoResizeTextarea() {
+    userInput.style.height = 'auto';
+    userInput.style.height = (userInput.scrollHeight) + 'px';
+}
+
+// Initialize the app
+init();
+let touchStartX = 0;
+let touchEndX = 0;
+
+function checkSwipeDirection() {
+    if (touchEndX < touchStartX) return 'left';
+    if (touchEndX > touchStartX) return 'right';
+    return 'none';
+}
+function getSavedMessages() {
+    return JSON.parse(localStorage.getItem('savedMessages') || '{}');
+}
 function displayMessage(message, sender) {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', `${sender}-message`);
@@ -79,13 +126,15 @@ function displayMessage(message, sender) {
 
     // Add to chat history
     chatHistory.push({ sender, message });
-}
 
-// Auto-resize textarea
-function autoResizeTextarea() {
-    userInput.style.height = 'auto';
-    userInput.style.height = (userInput.scrollHeight) + 'px';
+    // Add touch event listeners for assistant messages
+    if (sender === 'assistant') {
+        messageElement.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        messageElement.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe(messageElement, message);
+        });
+    }
 }
-
-// Initialize the app
-init();
