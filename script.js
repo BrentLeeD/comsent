@@ -82,7 +82,8 @@ async function sendMessage() {
     }
 }
 
-// Display message in chat
+// ... (previous code remains the same)
+
 function displayMessage(message, sender) {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', `${sender}-message`);
@@ -107,8 +108,7 @@ function displayMessage(message, sender) {
             currentX = e.touches[0].clientX;
             const swipeDistance = currentX - startX;
             if (swipeDistance > 0) { // Only allow right swipe
-                messageElement.style.transform = `translateX(${swipeDistance}px)`;
-                messageElement.style.opacity = 1 - (swipeDistance / 200);
+                messageElement.style.transform = `translateX(${swipeDistance * 0.5}px)`; // Reduce movement for elastic effect
             }
         });
 
@@ -120,13 +120,11 @@ function displayMessage(message, sender) {
             } else {
                 // Snap back if not swiped far enough
                 messageElement.style.transform = 'translateX(0)';
-                messageElement.style.opacity = 1;
             }
         });
     }
 }
 
-// Save message to local storage
 function saveMessage(messageElement, message) {
     const date = new Date().toISOString().split('T')[0];
     const firstThreeWords = message.split(' ').slice(0, 3).join('_');
@@ -136,9 +134,25 @@ function saveMessage(messageElement, message) {
     savedMessages[saveName] = message;
     localStorage.setItem('savedMessages', JSON.stringify(savedMessages));
 
-    // Animate message off-screen
-    messageElement.style.transform = 'translateX(100%)';
-    messageElement.style.opacity = 0;
+    // Create and animate ghost message
+    const ghostMessage = messageElement.cloneNode(true);
+    ghostMessage.classList.add('ghost-message');
+    messageElement.parentNode.insertBefore(ghostMessage, messageElement.nextSibling);
+
+    // Animate ghost message
+    requestAnimationFrame(() => {
+        ghostMessage.style.transform = 'translateX(100%) scale(0.8)';
+        ghostMessage.style.opacity = '0';
+    });
+
+    // Remove ghost message after animation
+    setTimeout(() => {
+        ghostMessage.remove();
+    }, 500);
+
+    // Bounce animation for original message
+    messageElement.style.transform = 'translateX(0)';
+    messageElement.classList.add('bounce');
 
     // Show "Message Saved!" notification
     const notification = document.createElement('div');
@@ -146,10 +160,11 @@ function saveMessage(messageElement, message) {
     notification.className = 'save-notification';
     messageElement.appendChild(notification);
 
-    // Remove the message element after animation
+    // Remove notification and bounce class after animation
     setTimeout(() => {
-        messageElement.remove();
-    }, 500);
+        notification.remove();
+        messageElement.classList.remove('bounce');
+    }, 1000);
 }
 
 // Auto-resize textarea
