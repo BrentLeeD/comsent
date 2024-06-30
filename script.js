@@ -55,68 +55,34 @@ function selectUser(user) {
 }
 
 // Send message
-function sendMessage() {
+async function sendMessage() {
     const message = userInput.value.trim();
     if (message) {
         displayMessage(message, 'user');
         userInput.value = '';
         autoResizeTextarea();
-        // Here you would typically send the message to your backend or AI service
-        // For now, we'll just simulate a response
-        setTimeout(() => {
-            displayMessage(`This is a simulated response to: "${message}"`, 'assistant');
-        }, 1000);
+
+        try {
+            // Simulated API call - replace with actual API call
+            const response = await new Promise(resolve => setTimeout(() => resolve({
+                ok: true,
+                json: () => Promise.resolve({ response: `This is a simulated response to: "${message}"` })
+            }), 1000));
+
+            if (!response.ok) {
+                throw new Error('API response was not ok');
+            }
+
+            const data = await response.json();
+            displayMessage(data.response, 'assistant');
+        } catch (error) {
+            console.error('Error:', error);
+            displayMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+        }
     }
 }
 
 // Display message in chat
-function handleSwipe(messageElement, message) {
-    if (checkSwipeDirection() === 'right') {
-        const saveDialog = document.createElement('div');
-        saveDialog.classList.add('save-dialog');
-        saveDialog.innerHTML = `
-            <p>Do you want to save this message?</p>
-            <input type="text" id="save-name" placeholder="Enter a name for this message">
-            <button id="save-yes">Yes</button>
-            <button id="save-no">No</button>
-        `;
-        messageElement.appendChild(saveDialog);
-
-        document.getElementById('save-yes').addEventListener('click', () => saveMessage(message));
-        document.getElementById('save-no').addEventListener('click', () => saveDialog.remove());
-    }
-}
-function saveMessage(message) {
-    const saveName = document.getElementById('save-name').value.trim();
-    if (saveName) {
-        const savedMessages = JSON.parse(localStorage.getItem('savedMessages') || '{}');
-        savedMessages[saveName] = message;
-        localStorage.setItem('savedMessages', JSON.stringify(savedMessages));
-        alert(`Message saved as "${saveName}"`);
-    } else {
-        alert('Please enter a name for the message');
-    }
-    document.querySelector('.save-dialog').remove();
-}
-// Auto-resize textarea
-function autoResizeTextarea() {
-    userInput.style.height = 'auto';
-    userInput.style.height = (userInput.scrollHeight) + 'px';
-}
-
-// Initialize the app
-init();
-let touchStartX = 0;
-let touchEndX = 0;
-
-function checkSwipeDirection() {
-    if (touchEndX < touchStartX) return 'left';
-    if (touchEndX > touchStartX) return 'right';
-    return 'none';
-}
-function getSavedMessages() {
-    return JSON.parse(localStorage.getItem('savedMessages') || '{}');
-}
 function displayMessage(message, sender) {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', `${sender}-message`);
@@ -127,14 +93,75 @@ function displayMessage(message, sender) {
     // Add to chat history
     chatHistory.push({ sender, message });
 
-    // Add touch event listeners for assistant messages
     if (sender === 'assistant') {
+        let startX, currentX;
+        let isDragging = false;
+
         messageElement.addEventListener('touchstart', e => {
-            touchStartX = e.changedTouches[0].screenX;
+            startX = e.touches[0].clientX;
+            isDragging = true;
         });
+
+        messageElement.addEventListener('touchmove', e => {
+            if (!isDragging) return;
+            currentX = e.touches[0].clientX;
+            const swipeDistance = currentX - startX;
+            if (swipeDistance > 0) { // Only allow right swipe
+                messageElement.style.transform = `translateX(${swipeDistance}px)`;
+                messageElement.style.opacity = 1 - (swipeDistance / 200);
+            }
+        });
+
         messageElement.addEventListener('touchend', e => {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe(messageElement, message);
+            isDragging = false;
+            const swipeDistance = currentX - startX;
+            if (swipeDistance > 100) { // Threshold for save action
+                saveMessage(messageElement, message);
+            } else {
+                // Snap back if not swiped far enough
+                messageElement.style.transform = 'translateX(0)';
+                messageElement.style.opacity = 1;
+            }
         });
     }
 }
+
+// Save message to local storage
+function saveMessage(messageElement, message) {
+    const date = new Date().toISOString().split('T')[0];
+    const firstThreeWords = message.split(' ').slice(0, 3).join('_');
+    const saveName = `${currentUser}_${date}_${firstThreeWords}`;
+
+    const savedMessages = JSON.parse(localStorage.getItem('savedMessages') || '{}');
+    savedMessages[saveName] = message;
+    localStorage.setItem('savedMessages', JSON.stringify(savedMessages));
+
+    // Animate message off-screen
+    messageElement.style.transform = 'translateX(100%)';
+    messageElement.style.opacity = 0;
+
+    // Show "Message Saved!" notification
+    const notification = document.createElement('div');
+    notification.textContent = 'Message Saved!';
+    notification.className = 'save-notification';
+    messageElement.appendChild(notification);
+
+    // Remove the message element after animation
+    setTimeout(() => {
+        messageElement.remove();
+    }, 500);
+}
+
+// Auto-resize textarea
+function autoResizeTextarea() {
+    userInput.style.height = 'auto';
+    userInput.style.height = (userInput.scrollHeight) + 'px';
+}
+
+// Retrieve saved messages
+function getSavedMessages() {
+    return JSON.parse(localStorage.getItem('savedMessages') || '{}');
+}
+
+// Initialize the app
+init();
