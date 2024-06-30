@@ -210,24 +210,40 @@ footer {
     background-color: var(--secondary-text-color);
 }
 .message {
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.3s ease;
+}
+
+.ghost-message {
+    position: absolute;
+    left: 0;
+    transition: transform 0.5s ease, opacity 0.5s ease;
+    pointer-events: none;
+}
+
+.bounce {
+    animation: bounce 0.5s ease;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(20px); }
 }
 
 .save-notification {
     position: absolute;
     top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    right: -100px;
+    transform: translateY(-50%);
     background-color: var(--primary-color);
     color: white;
     padding: 0.5rem 1rem;
     border-radius: 2rem;
     opacity: 0;
-    animation: fadeInOut 1.5s ease forwards;
+    animation: slideInOut 1s ease forwards;
 }
 
-@keyframes fadeInOut {
-    0%,
-    100% { opacity: 0; }
-    50% { opacity: 1; }
+@keyframes slideInOut {
+    0% { right: -100px; opacity: 0; }
+    20%, 80% { right: 20px; opacity: 1; }
+    100% { right: -100px; opacity: 0; }
 }
