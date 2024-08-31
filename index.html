@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoFamily Chat Preview - Updated Design</title>
+    <title>GoFamily Chat Preview - Refined Design</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/feather-icons"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
             transition: background-color 0.3s ease;
+            font-family: 'Inter', sans-serif;
         }
         .gradient-bg {
             background: linear-gradient(45deg, #8EC5FC, #E0C3FC);
@@ -43,6 +45,9 @@
             background-color: rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
+        .bot-message {
+            font-family: 'Merriweather', serif;
+        }
         @keyframes buttonPop {
             0% { transform: scale(1); }
             50% { transform: scale(1.1); }
@@ -52,22 +57,26 @@
 </head>
 <body class="gradient-bg min-h-screen">
     <div id="app" class="h-screen flex flex-col relative overflow-hidden">
+        <div class="fixed top-4 right-4 z-20">
+            <button id="theme-toggle" class="p-2 bg-white bg-opacity-50 rounded-full shadow-md">
+                <i data-feather="sun"></i>
+            </button>
+        </div>
+        <div class="fixed top-4 left-4 z-20">
+            <button id="voice-button" class="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
+                <i data-feather="mic"></i>
+            </button>
+        </div>
         <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 z-10"></div>
         <div id="input-container" class="p-4 z-10">
-            <form id="message-form" class="relative flex items-center">
+            <div class="relative flex items-center">
                 <textarea id="user-input" class="w-full p-3 pr-24 bg-white bg-opacity-30 backdrop-blur-sm rounded-xl shadow-inner outline-none resize-none transition-all duration-300 focus:ring-2 focus:ring-indigo-300 text-base" placeholder="Share your thoughts..." rows="1"></textarea>
-                <button type="submit" id="send-button" class="absolute right-2 bottom-2 px-4 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 transition-colors text-lg font-semibold">
+                <button id="send-button" class="absolute right-2 bottom-2 px-4 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 transition-colors text-lg">
                     Send
                 </button>
-            </form>
+            </div>
         </div>
     </div>
-    <button type="button" id="theme-toggle" class="absolute bottom-4 right-4 p-2 bg-white bg-opacity-50 rounded-full shadow-md z-20">
-        <i data-feather="sun"></i>
-    </button>
-    <button type="button" id="voice-button" class="absolute bottom-4 left-4 p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors z-20">
-        <i data-feather="mic"></i>
-    </button>
 
     <script>
         const chatMessages = document.getElementById('chat-messages');
@@ -75,7 +84,6 @@
         const sendButton = document.getElementById('send-button');
         const voiceButton = document.getElementById('voice-button');
         const themeToggle = document.getElementById('theme-toggle');
-        const messageForm = document.getElementById('message-form');
 
         function displayMessage(message, sender) {
             const messageElement = document.createElement('div');
@@ -87,19 +95,19 @@
             if (sender === 'user') {
                 classes.push('self-end', 'mr-4');
             } else {
-                classes.push('self-start');
+                classes.push('self-start', 'bot-message');
             }
             
             classes.forEach(cls => messageElement.classList.add(cls));
             
-            messageElement.innerHTML = `<p class="text-black dark:text-white font-semibold text-lg">${message}</p>`;
+            messageElement.innerHTML = `<p class="text-black dark:text-white text-lg">${message}</p>`;
             
             const wrapper = document.createElement('div');
             wrapper.classList.add('flex', sender === 'user' ? 'justify-end' : 'justify-start');
             wrapper.appendChild(messageElement);
 
             chatMessages.appendChild(wrapper);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            scrollToBottom();
 
             messageElement.style.opacity = '0';
             messageElement.style.transform = 'translateY(20px)';
@@ -109,8 +117,11 @@
             }, 50);
         }
 
-        function sendMessage(e) {
-            e.preventDefault();
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function sendMessage() {
             const message = userInput.value.trim();
             if (message) {
                 displayMessage(message, 'user');
@@ -125,7 +136,13 @@
             }
         }
 
-        messageForm.addEventListener('submit', sendMessage);
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
 
         let isDarkMode = false;
         themeToggle.addEventListener('click', () => {
