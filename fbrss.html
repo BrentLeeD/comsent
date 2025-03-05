@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SA Youth Facebook Feed Viewer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1B6EEF;
+            --secondary-color: #A5CE3A;
+            --accent-color: #45B763;
+            --warning-color: #FAE02F;
+            --dark-text: #1F1F1F;
+            --light-text: #FFFFFF;
+            --gray-bg: #F6F6F6;
+            --border-radius: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #F0F2F5;
+            color: var(--dark-text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 16px 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo img {
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .refresh-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background-color: #389751;
+        }
+        
+        .refresh-btn:disabled {
+            background-color: #BCBCBC;
+            cursor: not-allowed;
+        }
+        
+        .refresh-btn .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        .feed-filter {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            background: none;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .filter-btn:hover:not(.active) {
+            background-color: rgba(27, 110, 239, 0.1);
+        }
+
+        .last-updated {
+            font-size: 0.9rem;
+            color: #666;
+            text-align: right;
+            margin-bottom: 10px;
+        }
+
+        .feed {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .post {
+            background-color: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .post:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .post-header {
+            display: flex;
+            padding: 12px 16px;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .post-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .post-info {
+            flex: 1;
+        }
+
+        .post-page {
+            font-weight: 600;
+            color: var(--dark-text);
+        }
+
+        .post-time {
+            font-size: 0.8rem;
+            color: #65676B;
+        }
+
+        .post-content {
+            padding: 0 16px 16px;
+        }
+
+        .post-text {
+            margin-bottom: 12px;
+            white-space: pre-line;
+        }
+
+        .post-text a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .post-text a:hover {
+            text-decoration: underline;
+        }
+
+        .post-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .post-stats {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 16px;
+            border-top: 1px solid #E4E6EB;
+            color: #65676B;
+            font-size: 0.9rem;
+        }
+
+        .post-reactions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .post-reactions div {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .announcement {
+            background-color: var(--warning-color);
+            color: var(--dark-text);
+            padding: 12px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .announcement i {
+            font-size: 1.2rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 0;
+            color: #65676B;
+        }
+
+        .loading i {
+            font-size: 2rem;
+            margin-bottom: 16px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background-color: #FEE2E2;
+            color: #B91C1C;
+            padding: 16px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .error i {
+            font-size: 1.2rem;
+        }
+
+        .no-posts {
+            text-align: center;
+            padding: 40px 0;
+            color: #65676B;
+        }
+
+        .link-detection {
+            background-color: #f0f9ff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .opp-label {
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: var(--dark-text);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 640px) {
+            .container {
+                padding: 12px;
+            }
+            
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .last-updated {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <img src="/api/placeholder/80/80" alt="SA Youth Logo">
+                <h1>SA Youth Facebook Feed</h1>
+            </div>
+            <div class="header-info">
+                <span>For Guides | <span id="online-status">💚 Online</span></span>
+            </div>
+        </header>
+
+        <div class="announcement">
+            <i class="fas fa-bullhorn"></i>
+            <span>Viewing the latest posts from the <strong>SA Youth Facebook Page</strong>. Stay informed to better assist callers.</span>
+        </div>
+
+        <div class="controls">
+            <button id="refresh-btn" class="refresh-btn">
+                <i class="fas fa-sync-alt"></i>
+                Refresh Feed
+            </button>
+            <div class="feed-filter">
+                <button class="filter-btn active" data-filter="all">All Posts</button>
+                <button class="filter-btn" data-filter="opportunities">Opportunities</button>
+                <button class="filter-btn" data-filter="announcements">Announcements</button>
+            </div>
+        </div>
+
+        <div class="last-updated">
+            Last updated: <span id="update-time">October 15, 2024 10:30 AM</span>
+        </div>
+
+        <div id="feed-container" class="feed">
+            <!-- Posts will be inserted here -->
+        </div>
+    </div>
+
+    <script>
+        // API URL to fetch Facebook posts
+        const apiUrl = "https://prod-239.westeurope.logic.azure.com:443/workflows/99553f71df6e4e6fa65e410bccf44795/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Zfb2Kt-hvdW9-7j44dc6Wedk9_7_fK09XGn9a8UCjno";
+        
+        // Function to transform API response to usable format
+        function transformApiResponse(posts) {
+            return posts.map((post, index) => {
+                // Clean up HTML tags for text content, but keep actual line breaks
+                let cleanedContent = post.replace(/<br\s*\/?>/gi, '\n').replace(/<\/?[^>]+(>|$)/g, '');
+                
+                // Extract title (first line or use a placeholder)
+                const titleLines = cleanedContent.split('\n').filter(line => line.trim().length > 0);
+                const title = titleLines.length > 0 ? titleLines[0] : `Post ${index + 1}`;
+                
+                // Extract image URL if present
+                const imageMatches = post.match(/<img src="([^"]+)"/);
+                const imageUrl = imageMatches ? imageMatches[1] : null;
+                
+                // Extract links
+                const linkMatches = post.match(/https:\/\/[^\s<"']+/g);
+                const links = linkMatches || [];
+                
+                // Create a timestamp (using current time as fallback)
+                // Try to extract date from content first
+                let created_time = new Date();
+                const dateMatch = title.match(/(\d+\s+\w+\s+\d{4})/);
+                if (dateMatch) {
+                    const dateAttempt = new Date(dateMatch[1]);
+                    if (!isNaN(dateAttempt.getTime())) {
+                        created_time = dateAttempt;
+                    }
+                }
+                
+                // Determine post type
+                let type = "announcements"; // Default
+                const lowerContent = cleanedContent.toLowerCase();
+                if (lowerContent.includes("job") || lowerContent.includes("apply") || 
+                    lowerContent.includes("opportunity") || lowerContent.includes("vacancy")) {
+                    type = "opportunities";
+                }
+                
+                return {
+                    id: `post-${index}`,
+                    title: title,
+                    message: cleanedContent,
+                    created_time: created_time.toISOString(),
+                    full_picture: imageUrl,
+                    likes: Math.floor(Math.random() * 300) + 50, // Placeholder stats
+                    comments: Math.floor(Math.random() * 100) + 10,
+                    shares: Math.floor(Math.random() * 50) + 5,
+                    type: type,
+                    links: links
+                };
+            });
+        }
+        
+        // Fallback sample data in case the API call fails
+        const fallbackPosts = [
+            {
+                id: "fallback-1",
+                title: "#JobVacancy – Example",
+                message: "Example job posting. Please try refreshing to load the latest content from Facebook.",
+                created_time: new Date().toISOString(),
+                full_picture: "/api/placeholder/640/360",
+                likes: 100,
+                comments: 25,
+                shares: 10,
+                type: "opportunities",
+                links: ["https://sayouth.mobi"]
+            }
+        ];
+
+        // Function to format dates in a readable format
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true
+            });
+        }
+
+        // Function to calculate time ago
+        function timeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            
+            let interval = Math.floor(seconds / 31536000);
+            if (interval >= 1) {
+                return interval === 1 ? '1 year ago' : interval + ' years ago';
+            }
+            
+            interval = Math.floor(seconds / 2592000);
+            if (interval >= 1) {
+                return interval === 1 ? '1 month ago' : interval + ' months ago';
+            }
+            
+            interval = Math.floor(seconds / 86400);
+            if (interval >= 1) {
+                return interval === 1 ? '1 day ago' : interval + ' days ago';
+            }
+            
+            interval = Math.floor(seconds / 3600);
+            if (interval >= 1) {
+                return interval === 1 ? '1 hour ago' : interval + ' hours ago';
+            }
+            
+            interval = Math.floor(seconds / 60);
+            if (interval >= 1) {
+                return interval === 1 ? '1 minute ago' : interval + ' minutes ago';
+            }
+            
+            return Math.floor(seconds) === 0 ? 'just now' : Math.floor(seconds) + ' seconds ago';
+        }
+
+        // Function to linkify URLs in text
+        function linkifyText(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`);
+        }
+
+        // Function to detect if post contains opportunity info
+        function detectOpportunity(text) {
+            const keywords = ['application', 'apply', 'opportunity', 'job', 'learnership', 'nys', 'beei', 'employment'];
+            const lowercaseText = text.toLowerCase();
+            return keywords.some(keyword => lowercaseText.includes(keyword));
+        }
+
+        // Function to render posts to the feed
+        function renderPosts(posts, filter = 'all') {
+            const feedContainer = document.getElementById('feed-container');
+            
+            // If there's already an error message, keep it and append content below
+            const errorElement = feedContainer.querySelector('.error');
+            if (errorElement) {
+                // Keep the error message but clear other content
+                const errorMessage = errorElement.outerHTML;
+                feedContainer.innerHTML = errorMessage;
+            } else {
+                feedContainer.innerHTML = '';
+            }
+
+            if (!posts || posts.length === 0) {
+                feedContainer.innerHTML += `
+                    <div class="no-posts">
+                        <i class="fas fa-info-circle"></i>
+                        <p>No posts available. Try refreshing the feed.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Filter posts if needed
+            let filteredPosts = posts;
+            if (filter !== 'all') {
+                filteredPosts = posts.filter(post => post.type === filter);
+            }
+
+            if (filteredPosts.length === 0) {
+                feedContainer.innerHTML += `
+                    <div class="no-posts">
+                        <i class="fas fa-filter"></i>
+                        <p>No posts match the current filter.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Create HTML for each post
+            filteredPosts.forEach(post => {
+                const isOpportunity = post.type === 'opportunities' || detectOpportunity(post.message);
+                const postElement = document.createElement('div');
+                postElement.className = 'post';
+                
+                // Get title if available, or use the first line of the message
+                const postTitle = post.title || post.message.split('\n')[0];
+                
+                // Process message text (linkify URLs)
+                const processedMessage = linkifyText(post.message);
+                
+                // Format message with proper paragraphs
+                const formattedMessage = processedMessage
+                    .split('\n')
+                    .filter(line => line.trim() !== '')
+                    .map(line => `<p>${line}</p>`)
+                    .join('');
+                
+                // Extract important links for quick access
+                const importantLinks = post.links ? post.links.filter(link => 
+                    !link.includes('fetchrss.com') && 
+                    !link.includes('fbcdn.net') && 
+                    !link.includes('facebook.com') &&
+                    !link.includes('scontent')
+                ) : [];
+                
+                // Determine if this post has a sayouth.mobi link (for copy button)
+                const sayouthLinks = importantLinks.filter(link => 
+                    link.includes('sayouth.mobi') || 
+                    link.includes('sayouth.me')
+                );
+                
+                // Build the HTML for the post
+                postElement.innerHTML = `
+                    <div class="post-header">
+                        <img src="/api/placeholder/80/80" alt="SA Youth" class="post-avatar">
+                        <div class="post-info">
+                            <div class="post-page">SA Youth</div>
+                            <div class="post-time">${timeAgo(post.created_time)}</div>
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        <div class="post-text">
+                            ${isOpportunity ? '<span class="opp-label">Opportunity</span>' : ''}
+                            ${formattedMessage}
+                        </div>
+                        ${post.full_picture ? `<img src="${post.full_picture}" alt="Post image" class="post-image" onerror="this.onerror=null; this.src='/api/placeholder/640/360';">` : ''}
+                        
+                        ${importantLinks.length > 0 ? 
+                            `<div class="link-detection">
+                                <strong>Important Links:</strong>
+                                <ul>
+                                    ${importantLinks.map(link => {
+                                        const isSAYouthLink = link.includes('sayouth.mobi') || link.includes('sayouth.me');
+                                        return `<li>
+                                            <a href="${link}" target="_blank">${link}</a>
+                                            ${isSAYouthLink ? 
+                                                `<button class="copy-link" data-link="${link}">
+                                                    <i class="fas fa-copy"></i> Copy
+                                                </button>` : ''}
+                                        </li>`;
+                                    }).join('')}
+                                </ul>
+                            </div>` : ''}
+                    </div>
+                    <div class="post-stats">
+                        <div class="post-reactions">
+                            <div><i class="fas fa-thumbs-up"></i> ${post.likes || 0}</div>
+                            <div><i class="fas fa-comment"></i> ${post.comments || 0}</div>
+                            <div><i class="fas fa-share"></i> ${post.shares || 0}</div>
+                        </div>
+                        <div class="post-date">${formatDate(post.created_time)}</div>
+                    </div>
+                `;
+                
+                feedContainer.appendChild(postElement);
+                
+                // Add event listeners for copy buttons
+                const copyButtons = postElement.querySelectorAll('.copy-link');
+                copyButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const link = button.getAttribute('data-link');
+                        
+                        // Copy link to clipboard
+                        navigator.clipboard.writeText(link).then(() => {
+                            // Visual feedback
+                            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                            button.classList.add('copy-success');
+                            
+                            // Reset after 2 seconds
+                            setTimeout(() => {
+                                button.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                                button.classList.remove('copy-success');
+                            }, 2000);
+                        }).catch(err => {
+                            console.error('Failed to copy: ', err);
+                            button.innerHTML = '<i class="fas fa-times"></i> Failed';
+                            
+                            // Reset after 2 seconds
+                            setTimeout(() => {
+                                button.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                            }, 2000);
+                        });
+                    });
+                });
+            });
+        }
+
+        // Function to fetch posts from the API
+        function fetchPosts() {
+            // Disable refresh button and show loading state
+            const refreshBtn = document.getElementById('refresh-btn');
+            const originalBtnText = refreshBtn.innerHTML;
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<i class="fas fa-spinner"></i> Refreshing...';
+            
+            // Show loading state
+            const feedContainer = document.getElementById('feed-container');
+            feedContainer.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading posts...</p>
+                </div>
+            `;
+
+            // Make the actual API call
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Transform the API response to our format
+                    const transformedPosts = transformApiResponse(data);
+                    
+                    // Save to localStorage for offline access
+                    localStorage.setItem('facebookPosts', JSON.stringify(transformedPosts));
+                    localStorage.setItem('lastFetched', new Date().toISOString());
+                    
+                    // Update the last updated time
+                    const now = new Date();
+                    document.getElementById('update-time').textContent = now.toLocaleString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: 'numeric',
+                        hour12: true
+                    });
+                    
+                    // Get current filter
+                    const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+                    
+                    // Render the posts
+                    renderPosts(transformedPosts, activeFilter);
+                    
+                    // Re-enable refresh button
+                    refreshBtn.disabled = false;
+                    refreshBtn.innerHTML = originalBtnText;
+                })
+                .catch(error => {
+                    console.error('Error fetching posts:', error);
+                    
+                    // Try to load from localStorage if available
+                    const cachedPosts = localStorage.getItem('facebookPosts');
+                    const lastFetched = localStorage.getItem('lastFetched');
+                    
+                    if (cachedPosts) {
+                        const posts = JSON.parse(cachedPosts);
+                        
+                        // Show error message but still display cached content
+                        feedContainer.innerHTML = `
+                            <div class="error">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <div>
+                                    <p>Unable to fetch the latest posts. Showing cached content from ${new Date(lastFetched).toLocaleString()}.</p>
+                                    <p>Please check your connection and try again.</p>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Get current filter
+                        const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+                        
+                        // Render the cached posts
+                        renderPosts(posts, activeFilter);
+                    } else {
+                        // No cached posts available, show error and fallback content
+                        feedContainer.innerHTML = `
+                            <div class="error">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <div>
+                                    <p>Unable to fetch posts from Facebook. Please check your connection and try again.</p>
+                                    <p>Error: ${error.message}</p>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Get current filter
+                        const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+                        
+                        // Render the fallback posts
+                        renderPosts(fallbackPosts, activeFilter);
+                    }
+                    
+                    // Re-enable refresh button
+                    refreshBtn.disabled = false;
+                    refreshBtn.innerHTML = originalBtnText;
+                });
+        }
+
+        // Function to check and display online status
+        function updateOnlineStatus() {
+            const statusElement = document.getElementById('online-status');
+            if (navigator.onLine) {
+                statusElement.innerHTML = '💚 Online';
+                statusElement.style.color = '#45B763';
+            } else {
+                statusElement.innerHTML = '🔴 Offline';
+                statusElement.style.color = '#ED4C5C';
+                
+                // Show offline banner if not already displayed
+                if (!document.querySelector('.offline-banner')) {
+                    const banner = document.createElement('div');
+                    banner.className = 'offline-banner';
+                    banner.innerHTML = `
+                        <i class="fas fa-wifi-slash"></i>
+                        <span>You're currently offline. Showing cached content.</span>
+                    `;
+                    document.querySelector('.container').insertBefore(banner, document.querySelector('.controls'));
+                }
+            }
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add styles for offline banner
+            const style = document.createElement('style');
+            style.textContent = `
+                .offline-banner {
+                    background-color: #ED4C5C;
+                    color: white;
+                    padding: 10px 16px;
+                    border-radius: var(--border-radius);
+                    margin-bottom: 20px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                
+                .copy-link {
+                    background-color: var(--primary-color);
+                    color: white;
+                    border: none;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 0.8rem;
+                    cursor: pointer;
+                    margin-left: 8px;
+                }
+                
+                .copy-link:hover {
+                    background-color: #0F5DCB;
+                }
+                
+                .copy-success {
+                    background-color: var(--accent-color);
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Check online status initially
+            updateOnlineStatus();
+            
+            // Update online status when it changes
+            window.addEventListener('online', updateOnlineStatus);
+            window.addEventListener('offline', updateOnlineStatus);
+            
+            // Initial fetch for first load
+            fetchPosts();
+
+            // Set up refresh button
+            document.getElementById('refresh-btn').addEventListener('click', fetchPosts);
+
+            // Set up filter buttons
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    button.classList.add('active');
+                    
+                    // Get current data from cache or fallback
+                    const cachedPosts = localStorage.getItem('facebookPosts');
+                    let postsToRender = fallbackPosts;
+                    
+                    if (cachedPosts) {
+                        postsToRender = JSON.parse(cachedPosts);
+                    }
+                    
+                    // Apply the filter
+                    renderPosts(postsToRender, button.dataset.filter);
+                });
+            });
+            
+            // Set up auto-refresh every 10 minutes if online
+            setInterval(() => {
+                if (navigator.onLine) {
+                    fetchPosts();
+                }
+            }, 10 * 60 * 1000);
+        });
+    </script>
+</body>
+</html>
